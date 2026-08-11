@@ -1203,31 +1203,9 @@
     <div class="toast-box" id="toastBox"></div>
 
     <script>
-        // ═══════════════════════════════════════
-        // DATA: Courses Database
-        // ═══════════════════════════════════════
-        const coursesDB = [
-            { id:1, code:'CCS 3101', title:'Database Management Systems', dept:'CS', lecturer:'Dr. Stephen Mburu', credits:3, capacity:50, enrolled:42, day:'Monday', time:'08:00 - 11:00', slot:0, prereq:'CCS 2101', prereqMet:true, registered:true },
-            { id:2, code:'CIT 3102', title:'Network Administration', dept:'IT', lecturer:'Dr. Faith Kamau', credits:3, capacity:45, enrolled:38, day:'Monday', time:'11:00 - 14:00', slot:1, prereq:'None', prereqMet:true, registered:true },
-            { id:3, code:'CCS 3103', title:'Artificial Intelligence', dept:'CS', lecturer:'Ms. Mercy Njagi', credits:3, capacity:40, enrolled:39, day:'Tuesday', time:'08:00 - 11:00', slot:0, prereq:'CCS 2104', prereqMet:true, registered:true },
-            { id:4, code:'CCS 3104', title:'Software Engineering II', dept:'CS', lecturer:'Dr. George Musumba', credits:3, capacity:60, enrolled:51, day:'Wednesday', time:'08:00 - 11:00', slot:0, prereq:'CCS 2105', prereqMet:true, registered:true },
-            { id:5, code:'CIT 3105', title:'Web Application Development', dept:'IT', lecturer:'Ms. Lydia Wanjiru', credits:3, capacity:50, enrolled:48, day:'Thursday', time:'14:00 - 17:00', slot:2, prereq:'CIT 2102', prereqMet:true, registered:false },
-            { id:6, code:'CCS 3106', title:'Cybersecurity Principles', dept:'CS', lecturer:'Mr. James Mwangi', credits:3, capacity:35, enrolled:35, day:'Friday', time:'08:00 - 11:00', slot:0, prereq:'CCS 3102', prereqMet:true, registered:false },
-            { id:7, code:'CCS 4101', title:'Human Computer Interaction', dept:'CS', lecturer:'Dr. Agnes Mindila', credits:3, capacity:50, enrolled:25, day:'Monday', time:'08:00 - 11:00', slot:0, prereq:'None', prereqMet:true, registered:false },
-            { id:8, code:'CIT 3108', title:'Cloud Computing Infrastructure', dept:'IT', lecturer:'Mr. Anthony Njoroge', credits:3, capacity:40, enrolled:18, day:'Friday', time:'11:00 - 14:00', slot:1, prereq:'CIT 3102', prereqMet:false, registered:false },
-            { id:9, code:'CCS 3109', title:'Operating Systems', dept:'CS', lecturer:'Mr. David Kimani', credits:3, capacity:55, enrolled:40, day:'Wednesday', time:'14:00 - 17:00', slot:2, prereq:'CCS 2101', prereqMet:true, registered:false },
-            { id:10, code:'CIT 3110', title:'Mobile App Development', dept:'IT', lecturer:'Mr. Brian Ochieng', credits:3, capacity:45, enrolled:30, day:'Thursday', time:'08:00 - 11:00', slot:0, prereq:'CIT 2102', prereqMet:true, registered:false },
-        ];
+        const API_URL = 'http://localhost:5000/api';
+        let coursesDB = [];
 
-        // ═══════════════════════════════════════
-        // DATA: User accounts stored in localStorage
-        // ═══════════════════════════════════════
-        function getUsers() {
-            return JSON.parse(localStorage.getItem('dekut_users') || '[]');
-        }
-        function saveUsers(users) {
-            localStorage.setItem('dekut_users', JSON.stringify(users));
-        }
         function getCurrentUser() {
             return JSON.parse(localStorage.getItem('dekut_current_user') || 'null');
         }
@@ -1235,22 +1213,6 @@
             localStorage.setItem('dekut_current_user', JSON.stringify(user));
         }
 
-        // Seed a default user if none exist
-        if (getUsers().length === 0) {
-            saveUsers([{
-                firstName: 'Patrick',
-                lastName: 'Muli',
-                email: 'patrick@students.dkut.ac.ke',
-                regNumber: 'C026-01-0001/2023',
-                programme: 'BSc Computer Science',
-                yearOfStudy: '3rd Year',
-                password: '123456'
-            }]);
-        }
-
-        // ═══════════════════════════════════════
-        // AUTH: Screen Switching
-        // ═══════════════════════════════════════
         function showScreen(screenId) {
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('signupScreen').style.display = 'none';
@@ -1274,10 +1236,7 @@
             }
         }
 
-        // ═══════════════════════════════════════
-        // AUTH: Sign Up Handler
-        // ═══════════════════════════════════════
-        function handleSignup(e) {
+        async function handleSignup(e) {
             e.preventDefault();
             const alertBox = document.getElementById('signupAlert');
 
@@ -1289,58 +1248,65 @@
             const yearOfStudy = document.getElementById('yearOfStudy').value;
             const password = document.getElementById('signupPassword').value;
 
-            if (!firstName || !lastName || !regNumber || !email || !programme || !yearOfStudy || !password) {
-                showAlert(alertBox, 'Please fill in all required fields.', 'error');
-                return;
+            try {
+                const res = await fetch(`${API_URL}/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firstName, lastName, regNumber, email, programme, yearOfStudy, password })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    showAlert(alertBox, '✅ Account created successfully! Redirecting to login...', 'success');
+                    setTimeout(() => {
+                        showScreen('loginScreen');
+                        document.getElementById('loginEmail').value = email;
+                        showAlert(document.getElementById('loginAlert'), '✅ Account created! Please sign in with your credentials.', 'success');
+                    }, 1500);
+                } else {
+                    showAlert(alertBox, data.message || 'Error occurred during signup.', 'error');
+                }
+            } catch (err) {
+                showAlert(alertBox, 'Connection error to backend database.', 'error');
             }
-
-            const users = getUsers();
-            if (users.find(u => u.email === email)) {
-                showAlert(alertBox, 'An account with this email already exists.', 'error');
-                return;
-            }
-            if (users.find(u => u.regNumber === regNumber)) {
-                showAlert(alertBox, 'An account with this registration number already exists.', 'error');
-                return;
-            }
-
-            users.push({ firstName, lastName, regNumber, email, programme, yearOfStudy, password });
-            saveUsers(users);
-
-            showAlert(alertBox, '✅ Account created successfully! Redirecting to login...', 'success');
-            setTimeout(() => {
-                showScreen('loginScreen');
-                document.getElementById('loginEmail').value = email;
-                showAlert(document.getElementById('loginAlert'), '✅ Account created! Please sign in with your new credentials.', 'success');
-            }, 1500);
         }
 
-        // ═══════════════════════════════════════
-        // AUTH: Login Handler
-        // ═══════════════════════════════════════
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
             const alertBox = document.getElementById('loginAlert');
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value;
 
-            const users = getUsers();
-            const user = users.find(u => u.email === email && u.password === password);
-
-            if (!user) {
-                showAlert(alertBox, '❌ Invalid email or password. Please try again.', 'error');
-                return;
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    setCurrentUser(data.user);
+                    loadUserProfile(data.user);
+                    showScreen('appDashboard');
+                    await renderAll();
+                    toast('Welcome back, ' + data.user.firstName + '! 🎓', 'success');
+                } else {
+                    showAlert(alertBox, data.message || 'Invalid email or password.', 'error');
+                }
+            } catch (err) {
+                showAlert(alertBox, 'Connection error to backend database.', 'error');
             }
-
-            // Success — store current user and enter app
-            setCurrentUser(user);
-            loadUserProfile(user);
-            showScreen('appDashboard');
-            renderAll();
-            toast('Welcome back, ' + user.firstName + '! 🎓', 'success');
         }
 
-        function handleLogout() {
+        async function handleLogout() {
+            const user = getCurrentUser();
+            if (user) {
+                try {
+                    await fetch(`${API_URL}/logout`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${user.token}` }
+                    });
+                } catch (e) {}
+            }
             localStorage.removeItem('dekut_current_user');
             showScreen('loginScreen');
             document.getElementById('loginEmail').value = '';
@@ -1367,9 +1333,6 @@
             el.className = 'alert-box visible alert-' + type;
         }
 
-        // ═══════════════════════════════════════
-        // APP: Panel Navigation
-        // ═══════════════════════════════════════
         const panelMeta = {
             dashboard: { title: 'Dashboard', subtitle: "Welcome back! Here's your registration overview." },
             catalog: { title: 'Course Catalog', subtitle: 'Browse and register for available courses.' },
@@ -1378,7 +1341,7 @@
             profile: { title: 'My Profile', subtitle: 'Your student account information.' },
         };
 
-        function switchPanel(name) {
+        async function switchPanel(name) {
             document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
             document.getElementById('panel-' + name).classList.add('active');
             document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
@@ -1386,13 +1349,29 @@
             document.getElementById('panelTitle').textContent = panelMeta[name]?.title || '';
             document.getElementById('panelSubtitle').textContent = panelMeta[name]?.subtitle || '';
             document.getElementById('sidebar').classList.remove('open');
-            renderAll();
+            await renderAll();
         }
 
-        // ═══════════════════════════════════════
-        // APP: Render All
-        // ═══════════════════════════════════════
-        function renderAll() {
+        async function fetchCourses() {
+            const user = getCurrentUser();
+            if (!user) return;
+            try {
+                const res = await fetch(`${API_URL}/courses?user_id=${user.id}`, {
+                    headers: {
+                        'Authorization': `Bearer ${user.token}`
+                    }
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    coursesDB = data.courses;
+                }
+            } catch (err) {
+                console.error("Error fetching courses from SQLite database", err);
+            }
+        }
+
+        async function renderAll() {
+            await fetchCourses();
             updateStats();
             renderCatalog();
             renderTimetable('dashboardTimetable');
@@ -1407,9 +1386,6 @@
             document.getElementById('statCourses').textContent = reg.length;
         }
 
-        // ═══════════════════════════════════════
-        // APP: Catalog Render
-        // ═══════════════════════════════════════
         function renderCatalog() {
             const grid = document.getElementById('catalogGrid');
             const search = (document.getElementById('catalogSearch')?.value || '').toLowerCase();
@@ -1424,11 +1400,11 @@
             });
 
             grid.innerHTML = filtered.map(c => {
-                const pct = (c.enrolled / c.capacity) * 100;
-                const isFull = c.enrolled >= c.capacity;
+                const pct = (c.enrolled_count / c.capacity) * 100;
+                const isFull = c.enrolled_count >= c.capacity;
                 const fillColor = isFull ? '#ef4444' : pct > 80 ? '#f59e0b' : '#10b981';
-                let prereqClass = c.prereq === 'None' ? 'none' : (c.prereqMet ? 'met' : 'unmet');
-                let prereqText = c.prereq === 'None' ? 'No prerequisites' : (c.prereqMet ? '✅ ' + c.prereq + ' completed' : '⚠️ Requires ' + c.prereq);
+                let prereqClass = c.prerequisite === 'None' ? 'none' : (c.prereqMet ? 'met' : 'unmet');
+                let prereqText = c.prerequisite === 'None' ? 'No prerequisites' : (c.prereqMet ? '✅ ' + c.prerequisite + ' completed' : '⚠️ Requires ' + c.prerequisite);
 
                 let btnHtml;
                 if (c.registered) {
@@ -1452,7 +1428,7 @@
                         </div>
                         <span class="prereq-badge ${prereqClass}">${prereqText}</span>
                         <div class="seats-bar">
-                            <div class="seats-info"><span>Seats</span><span>${c.enrolled} / ${c.capacity}</span></div>
+                            <div class="seats-info"><span>Seats</span><span>${c.enrolled_count} / ${c.capacity}</span></div>
                             <div class="seats-track"><div class="seats-fill" style="width:${pct}%; background:${fillColor}"></div></div>
                         </div>
                     </div>
@@ -1461,51 +1437,29 @@
             }).join('');
         }
 
-        // ═══════════════════════════════════════
-        // APP: Registration Logic (Validation Engine)
-        // ═══════════════════════════════════════
-        function toggleCourse(id) {
-            const c = coursesDB.find(x => x.id === id);
-            if (!c) return;
-
-            if (c.registered) {
-                c.registered = false;
-                c.enrolled--;
-                toast(`Dropped ${c.code} — ${c.title}`, 'error');
-            } else {
-                // 1. Prerequisite check
-                if (!c.prereqMet) {
-                    toast(`❌ Prerequisite not met: ${c.prereq} required!`, 'error');
-                    return;
+        async function toggleCourse(id) {
+            const user = getCurrentUser();
+            if (!user) return;
+            try {
+                const res = await fetch(`${API_URL}/toggle-course`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ user_id: user.id, course_id: id })
+                });
+                const data = await res.json();
+                if (data.status === 'registered') {
+                    toast(`✅ ${data.message}`, 'success');
+                } else if (data.status === 'dropped') {
+                    toast(`❌ ${data.message}`, 'error');
+                } else {
+                    toast(data.message || 'Registration failed.', 'warning');
                 }
-                // 2. Capacity check
-                if (c.enrolled >= c.capacity) {
-                    toast(`❌ ${c.code} is FULL (${c.capacity}/${c.capacity} seats)!`, 'error');
-                    return;
-                }
-                // 3. Clash detection
-                const clash = coursesDB.find(x => x.registered && x.day === c.day && x.slot === c.slot);
-                if (clash) {
-                    toast(`⚠️ Schedule Clash: ${clash.code} already on ${c.day} at ${c.time}!`, 'warning');
-                    return;
-                }
-                // 4. Max credits check
-                const currentCredits = coursesDB.filter(x => x.registered).reduce((a, x) => a + x.credits, 0);
-                if (currentCredits + c.credits > 24) {
-                    toast(`❌ Maximum 24 credits exceeded!`, 'error');
-                    return;
-                }
-
-                c.registered = true;
-                c.enrolled++;
-                toast(`✅ Registered for ${c.code} — ${c.title}!`, 'success');
+                await renderAll();
+            } catch (err) {
+                toast('Connection error to database server.', 'error');
             }
-            renderAll();
         }
 
-        // ═══════════════════════════════════════
-        // APP: Timetable Render
-        // ═══════════════════════════════════════
         function renderTimetable(containerId) {
             const el = document.getElementById(containerId);
             if (!el) return;
@@ -1526,9 +1480,6 @@
             el.innerHTML = html;
         }
 
-        // ═══════════════════════════════════════
-        // APP: History Render
-        // ═══════════════════════════════════════
         function renderHistory() {
             const tbody = document.getElementById('historyBody');
             const reg = coursesDB.filter(c => c.registered);
