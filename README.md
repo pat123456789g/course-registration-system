@@ -1,105 +1,104 @@
 # 🎓 DeKUT Course Registration System
 
-A full-stack web-based **University Course Registration System** built for the School of Computer Science & Information Technology at **Dedan Kimathi University of Technology (DeKUT)**.
+A full-stack, secure **University Course Registration System** built for the School of Computer Science & Information Technology at **Dedan Kimathi University of Technology (DeKUT)**. 
+
+The application utilizes a **3-tier architecture** with a responsive frontend client, a Python Flask REST API server, and a persistent SQLite SQL database with foreign key constraints.
 
 ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)
+
+---
+
+## 🎨 System Diagrams
+
+The system architecture and model designs are documented in high-resolution visual formats:
+1. **Entity Relationship Diagram (ERD):** [course_registration_erd.png](course_registration_erd.png) — Details table schemas, foreign key relationships, and index constraints.
+2. **Use Case Diagram:** [use_case_diagram.png](use_case_diagram.png) — Depicts actor interactions and workflow boundaries.
+
+---
 
 ## ✨ Features
 
-### 🔐 Authentication System
-- **Login** with email & password validation
-- **Create Account** with full student registration (Name, Reg No, Email, Programme, Year of Study)
-- Session persistence via `localStorage`
-- Password show/hide toggle
-- Form validation with error alerts
+### 🔐 1. Cryptographic Security & Authentication
+- **Secure Password Hashing:** Uses Werkzeug's `scrypt` hashing algorithm; plaintext passwords are never stored in the database.
+- **Token-Based Session Authorization:** Login generates a unique hex token stored in a `sessions` table. Protected endpoints require the token passed via `Authorization: Bearer <token>` in HTTP request headers.
+- **ID Manipulation Prevention:** Backend validates token ownership before allowing student queries or course toggle actions (returns `403 Forbidden` on mismatched IDs).
 
-### 📚 Course Catalog & Registration
-- Browse **10 available courses** across Computer Science and Information Technology departments
-- **Search & Filter** by course code, title, department, or day
-- Real-time **seat capacity progress bars** with color indicators (green/amber/red)
+### 📚 2. Catalog & Enrolment Management
+- Real-time seat capacity tracker with visual progress bars.
+- Dynamic weekly schedule/timetable grid mapping enrolled courses.
+- Filter by department (CS/IT) and search by code or title.
 
-### ⚡ Smart Validation Engine (4 Algorithms)
-1. **Prerequisite Checker** — Blocks enrolment if required lower-level modules aren't completed
-2. **Timetable Clash Detection** — Prevents registering for overlapping lecture slots
-3. **Seat Capacity Limiter** — Blocks registration when a course is full
-4. **Max Credits Enforcer** — Prevents exceeding the 24-credit semester limit
+### ⚡ 3. Validation Engine (5 Constraints)
+1. **Prerequisite Verification:** Queries enrolments to block registration if prerequisite courses offered in the catalog are not satisfied.
+2. **Timetable Clash Detection:** Prevents registering for modules occupying overlapping slots.
+3. **Capacity Limiter:** Disables registration when a course is full.
+4. **Credit Cap Enforcer:** Restricts registration to a maximum of 24 credits per semester.
+5. **Signup Input Validation:** Validates email formatting, registration number constraints, and minimum password lengths (6 chars) on the server side.
 
-### 📅 Dynamic Timetable
-- Auto-generated **weekly schedule grid** (Monday–Friday, 08:00–17:00)
-- Updates in real-time when courses are added or dropped
-
-### 📊 Student Dashboard
-- Live stats: Registered Credits, Enrolled Courses, GPA, Semester Status
-- Enrolment History audit trail table
-- Student Profile page with academic summary
-
-### 🎨 Premium UI/UX
-- Modern sidebar navigation with dark theme
-- Toast notification system for all actions
-- Smooth animations and hover effects
-- Fully **responsive** — works on desktop, tablet, and mobile
-
-## 🚀 Quick Start
-
-### Option 1: Open directly
-Simply open `index.html` in any modern web browser (Chrome, Edge, Firefox).
-
-### Option 2: Run with local server
-```bash
-python -m http.server 8080
-```
-Then visit: [http://localhost:8080](http://localhost:8080)
-
-## 🔑 Default Login Credentials
-
-| Field | Value |
-|-------|-------|
-| Email | `patrick@students.dkut.ac.ke` |
-| Password | `123456` |
-
-Or click **"Create Account"** to register a new student.
-
-## 🏗️ Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Structure | HTML5 (Semantic) |
-| Styling | CSS3 (Custom Properties, Grid, Flexbox) |
-| Logic | Vanilla JavaScript (ES6+) |
-| Typography | Google Fonts (Outfit, Inter, JetBrains Mono) |
-| Storage | Browser localStorage |
+---
 
 ## 📁 Project Structure
 
 ```
 course-registration-system/
-├── index.html          # Complete single-file application (1,571 lines)
-├── README.md           # Project documentation
-└── LICENSE             # MIT License
+├── app.py                                   # Python Flask REST API server & validations
+├── index.html                               # Frontend single-page application client
+├── schema.sql                               # Clean SQL schema database file
+├── registration.db                          # Live SQLite database binary file
+├── verify_fixes.py                          # Automated database & security test script
+├── generate_final_reports.py                # QA reporting generator script
+├── course_registration_erd.png              # Database Entity Relationship Diagram
+├── use_case_diagram.png                     # System Use Case Diagram
+├── Student_Course_Registration_FINAL_QA.xlsx# Excel regression testing workbook
+└── Student_Course_Registration_FINAL_QA_REPORT.pdf # PDF regression testing report
 ```
 
-## 📐 System Architecture
+---
 
+## 🚀 Setup & Installation
+
+### 1. Prerequisites
+Ensure Python 3.x is installed, then install package dependencies:
+```bash
+pip install flask flask-cors openpyxl reportlab pillow requests
 ```
-┌─────────────────────────────────────────────────┐
-│                  PRESENTATION LAYER              │
-│  Login Screen │ Sign Up Screen │ Dashboard App   │
-├─────────────────────────────────────────────────┤
-│                  BUSINESS LOGIC LAYER            │
-│  Auth Engine │ Prerequisite Checker │ Clash Det.  │
-│  Capacity Limiter │ Credits Enforcer │ Renderer  │
-├─────────────────────────────────────────────────┤
-│                  DATA LAYER                      │
-│  localStorage (Users DB) │ In-Memory Courses DB  │
-└─────────────────────────────────────────────────┘
+
+### 2. Start the Backend API Server
+Launch the Flask backend server from the project directory:
+```bash
+python app.py
 ```
+*The backend server initializes/migrates the SQLite database file `registration.db` and listens on `http://127.0.0.1:5000`.*
+
+### 3. Run the Frontend Client
+You can open `index.html` directly in any web browser, or serve it using Python's static server:
+```bash
+python -m http.server 8080
+```
+Then visit: [http://localhost:8080](http://localhost:8080)
+
+---
+
+## 🧪 Testing & Verification
+
+### Running Automated QA Verification
+Execute the test runner script to check password hashing, cascading deletions, NOT NULL constraints, and header authentication controls:
+```bash
+python verify_fixes.py
+```
+
+### Generating QA Excel and PDF Reports
+To rebuild the Excel workbook and PDF Quality Assurance reports:
+```bash
+python generate_final_reports.py
+```
+
+---
 
 ## 👨‍💻 Author
 
-**Patrick Muli** — Dedan Kimathi University of Technology
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
+**Patrick Muli** — Dedan Kimathi University of Technology (DeKUT)
